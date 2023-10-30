@@ -322,3 +322,49 @@ def test_textsynth():
 
     for (pred, _), tgt in zip(vals, targets):
         assert pred == pytest.approx(tgt, rel=1e-3)
+
+
+def test_tgi():
+    tgi = models.get_model("tgi")
+    (
+        (ll_dog, ig_dog),
+        (ll_cat, ig_cat),
+        (_, ll_max_0),
+        (_, ll_max_1),
+        (_, ll_max_2),
+        *vals,
+    ) = tgi.loglikelihood(LOGLIKELIHOOD_TEST_CASES)
+
+    assert ll_dog > ll_cat
+    assert not ig_cat
+
+    assert ig_dog
+    assert not ll_max_0
+    assert not ll_max_1
+    assert not ll_max_2
+
+    # test empty context
+    tgi.loglikelihood([("", "test")])
+
+    (gen,) = tgi.greedy_until(
+        [("The quick brown fox jumps over the lazy", [".", "\n"])]
+    )
+
+    assert gen == " dog"
+
+    print([x[0] for x in vals])
+
+    targets = [
+        -17.90513712817,
+        -41.83518912287,
+        -33.82445643841,
+        -2.377361565302,
+        -99.53018069754,
+        -243.5642283598,
+        -528.6862613790,
+        -17.90513712817,
+        -5.041000672142,
+    ]
+
+    for (pred, _), tgt in zip(vals, targets):
+        assert pred == pytest.approx(tgt, rel=1e-3)
